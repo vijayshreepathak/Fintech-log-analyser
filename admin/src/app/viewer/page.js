@@ -13,8 +13,6 @@ import {
   getKeyValue,
   Input,
   Button,
-  Select,
-  SelectItem,
 } from "@nextui-org/react";
 import useSWR from "swr";
 import { Slider } from "@/components/ui/slider";
@@ -27,19 +25,6 @@ export default function Page() {
   const [sortDirection, setSortDirection] = React.useState(true);
   const [search, setSearch] = React.useState("");
   const [fraudProbability, setFraudProbability] = React.useState(0);
-  const [unique, setUnique] = React.useState("");
-  const [uniqueCount, setUniqueCount] = React.useState(0);
-
-  useEffect(() => {
-    if (!unique.length) return;
-    const fn = async () => {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/unique/` + unique
-      );
-      setUniqueCount(await res.text());
-    };
-    fn();
-  }, [unique]);
 
   const { data, isLoading } = useSWR(
     `${process.env.NEXT_PUBLIC_BACKEND_URL}/admin/getLogs?page=${page}&len=10&sortBy=${sortBy}&${search}&sortOrder=${sortDirection ? "asc" : "desc"}`,
@@ -48,17 +33,15 @@ export default function Page() {
       keepPreviousData: true,
     }
   );
-  
+
   const rowsPerPage = 10;
   const pages = useMemo(() => {
-    return data?.count ? Math.floor(data.count / rowsPerPage) : 0;
+    return data?.count ? Math.ceil(data.count / rowsPerPage) : 0;
   }, [data?.count, rowsPerPage]);
-  
+
   useEffect(() => {
     setPage(1);
   }, [sortBy, sortDirection, search]);
-
-  const loadingState = isLoading || data?.logs.length === 0 ? "loading" : "idle";
 
   const searchButtonClick = () => {
     const transactionID = document.getElementById("transactionID").value;
@@ -75,53 +58,159 @@ export default function Page() {
   };
 
   return (
-  <div className="flex flex-col">
-  <div className="flex flex-col gap-2 mb-6">
-    <span className="text-2xl">Search By</span>
+    <div className="flex flex-col p-4 bg-[#10172a] text-white min-h-screen">
+      {/* Search Section */}
+      <div className="flex flex-col gap-4 mb-8">
+        <h1 className="text-2xl font-semibold">Search Criteria</h1>
 
-    <div className="flex flex-wrap gap-2">
-      <Input id="transactionID" className="flex-1 min-w-[250px]" type="text" label="Transaction ID" placeholder="Enter Transaction ID" />
-      <Input id="userID" className="flex-1 min-w-[250px]" type="text" label="User ID" placeholder="Enter User ID" />
-      <Input id="sourceAccount" className="flex-1 min-w-[250px]" type="text" label="Source Account" placeholder="Enter Source Account" />
-    </div>
-    <div className="flex flex-wrap gap-2">
-      <Input id="destinationAccount" className="flex-1 min-w-[250px]" type="text" label="Destination Account" placeholder="Enter Destination Account" />
-      <Input id="currencyType" className="flex-1 min-w-[250px]" type="text" label="Currency Type" placeholder="Enter Currency Type" />
-      <Input id="paymentMethod" className="flex-1 min-w-[250px]" type="text" label="Payment Method" placeholder="Enter Payment Method" />
-    </div>
+        {/* Input Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex flex-col">
+            <label htmlFor="transactionID" className="text-sm mb-1">
+              Transaction ID
+            </label>
+            <Input
+              id="transactionID"
+              className="w-full"
+              type="text"
+              placeholder="Enter Transaction ID"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="userID" className="text-sm mb-1">
+              User ID
+            </label>
+            <Input
+              id="userID"
+              className="w-full"
+              type="text"
+              placeholder="Enter User ID"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="sourceAccount" className="text-sm mb-1">
+              Source Account
+            </label>
+            <Input
+              id="sourceAccount"
+              className="w-full"
+              type="text"
+              placeholder="Enter Source Account"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="destinationAccount" className="text-sm mb-1">
+              Destination Account
+            </label>
+            <Input
+              id="destinationAccount"
+              className="w-full"
+              type="text"
+              placeholder="Enter Destination Account"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="currencyType" className="text-sm mb-1">
+              Currency Type
+            </label>
+            <Input
+              id="currencyType"
+              className="w-full"
+              type="text"
+              placeholder="Enter Currency Type"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label htmlFor="paymentMethod" className="text-sm mb-1">
+              Payment Method
+            </label>
+            <Input
+              id="paymentMethod"
+              className="w-full"
+              type="text"
+              placeholder="Enter Payment Method"
+            />
+          </div>
+        </div>
 
-    {/* Fraud Probability & Search Button */}
-    <div className="flex flex-wrap justify-between items-center mt-3 gap-2">
-      <div className="flex items-center gap-3 flex-1 min-w-[250px]">
-        <span className="min-w-fit">Fraud Probability</span>
-        <Slider defaultValue={[0]} max={100} step={1} onValueChange={(e) => setFraudProbability(e[0])} />
-        <span className="font-bold text-[#020817] bg-white px-3 py-1 rounded-full flex items-center">
-          {fraudProbability}
-        </span>
+        {/* Fraud Probability Slider */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-4 gap-4">
+          <div className="flex items-center gap-4 w-full">
+            <label className="text-sm">Fraud Probability:</label>
+            <Slider
+              className="flex-1"
+              defaultValue={[0]}
+              max={100}
+              step={1}
+              onValueChange={(e) => setFraudProbability(e[0])}
+            />
+            <span className="text-sm px-3 py-1 bg-white text-black rounded">
+              {fraudProbability}%
+            </span>
+          </div>
+          <Button
+            color="primary"
+            className="w-full sm:w-1/3"
+            onClick={searchButtonClick}
+          >
+            Search
+          </Button>
+        </div>
       </div>
-      <Button className="flex-1 min-w-[200px]" color="primary" onClick={searchButtonClick}>Search</Button>
-    </div>
 
-  </div>
-      <Table aria-label="Transaction Logs">
-        <TableHeader>
-          {["TransactionID", "UserID", "SourceAccount", "DestinationAccount", "TransactionAmount", "CurrencyType", "TransactionType", "TransactionStatus", "TransactionTimestamp", "IPAddress", "Geolocation", "PaymentMethod", "RiskLevel"].map((col) => (
-            <TableColumn key={col} allowsSorting onClick={() => {
-              setSortBy(col);
-              setSortDirection((prev) => !prev);
-            }}>
-              {col === "RiskLevel" ? "Fraud Probability" : col}
-            </TableColumn>
-          ))}
-        </TableHeader>
-        <TableBody items={data?.logs ?? []} loadingContent={<Spinner />} loadingState={loadingState}>
-          {(item) => (
-            <TableRow key={Math.random()}>
-              {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+      {/* Table Section */}
+      <div className="flex flex-col gap-4">
+        <Table
+          aria-label="Transaction Logs"
+          className="bg-[#1e293b] rounded-lg overflow-auto"
+        >
+          <TableHeader>
+            {[
+              "TransactionID",
+              "UserID",
+              "SourceAccount",
+              "DestinationAccount",
+              "TransactionAmount",
+              "CurrencyType",
+              "TransactionType",
+              "TransactionStatus",
+              "TransactionTimestamp",
+              "PaymentMethod",
+              "Fraud Probability",
+            ].map((col) => (
+              <TableColumn
+                key={col}
+                allowsSorting
+                onClick={() => {
+                  setSortBy(col);
+                  setSortDirection((prev) => !prev);
+                }}
+              >
+                {col}
+              </TableColumn>
+            ))}
+          </TableHeader>
+          <TableBody
+            items={data?.logs ?? []}
+            loadingContent={<Spinner />}
+            loadingState={isLoading ? "loading" : "idle"}
+          >
+            {(item) => (
+              <TableRow key={item.TransactionID}>
+                {(columnKey) => <TableCell>{getKeyValue(item, columnKey)}</TableCell>}
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        <Pagination
+          total={pages}
+          current={page}
+          onChange={(page) => setPage(page)}
+          className="mt-4"
+        />
+      </div>
     </div>
   );
 }
